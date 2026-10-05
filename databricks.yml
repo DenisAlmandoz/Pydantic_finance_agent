@@ -1,0 +1,33 @@
+bundle:
+  name: ledgerline-finance-agent
+
+variables:
+  app_name:
+    default: ledgerline-finance-agent
+
+targets:
+  dev:
+    mode: development
+    default: true
+    resources:
+      apps:
+        ledgerline:
+          name: ${var.app_name}
+          description: Synthetic-data finance analytics assistant
+          source_code_path: .
+          resources:
+            - name: openai-api-key
+              secret:
+                scope: finance-secrets
+                key: openai-api-key
+                permission: READ
+            - name: opik-api-key
+              secret:
+                scope: finance-secrets
+                key: opik-api-key
+                permission: READ
+            - name: finance-api-tokens
+              secret:
+                scope: finance-secrets
+                key: finance-api-tokens
+                permission: READ

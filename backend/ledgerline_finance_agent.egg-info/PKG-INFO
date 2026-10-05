@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: ledgerline-finance-agent
+Version: 0.1.0
+Summary: A synthetic-data finance analytics agent with a FastAPI API.
+Requires-Python: >=3.11
+Requires-Dist: fastapi<1.0,>=0.115
+Requires-Dist: opik<2.0,>=1.8
+Requires-Dist: pydantic-ai<2.0,>=1.0
+Requires-Dist: uvicorn[standard]<1.0,>=0.30

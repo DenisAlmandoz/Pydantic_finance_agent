@@ -1,0 +1,12 @@
+command: ["bash", "databricks/run.sh"]
+env:
+  - name: PORT
+    value: "8000"
+  - name: FINANCE_MODEL
+    value: "openai:gpt-4o-mini"
+  - name: OPENAI_API_KEY
+    valueFrom: openai-api-key
+  - name: OPIK_API_KEY
+    valueFrom: opik-api-key
+  - name: FINANCE_API_TOKENS
+    valueFrom: finance-api-tokens
