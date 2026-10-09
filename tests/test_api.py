@@ -32,6 +32,9 @@ def test_analyst_can_use_demo_chat() -> None:
     assert response.status_code == 200
     assert response.json()["mode"] == "demo"
     assert "2,075.00" in response.json()["answer"]
+    trajectory = response.json()["trajectory"]
+    assert trajectory
+    assert trajectory[-1]["kind"] == "final"
 
 
 def test_built_frontend_is_served_from_root() -> None:

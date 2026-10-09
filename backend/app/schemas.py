@@ -10,10 +10,19 @@ class ChatRequest(BaseModel):
     session_id: str = Field(min_length=1, max_length=100)
 
 
+class TrajectoryStep(BaseModel):
+    step: int
+    kind: Literal["model", "tool_call", "tool_result", "final"]
+    name: str
+    detail: str
+
+
 class ChatResponse(BaseModel):
     answer: str
     session_id: str
     mode: Literal["agent", "demo"]
+    model: str | None = None
+    trajectory: list[TrajectoryStep] = Field(default_factory=list)
 
 
 class Metric(BaseModel):

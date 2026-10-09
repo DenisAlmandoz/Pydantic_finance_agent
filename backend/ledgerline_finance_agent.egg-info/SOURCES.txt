@@ -1,9 +1,12 @@
+README.md
 pyproject.toml
 backend/app/__init__.py
 backend/app/agent.py
 backend/app/data.py
+backend/app/evals.py
 backend/app/main.py
 backend/app/memory.py
+backend/app/observability.py
 backend/app/schemas.py
 backend/app/security.py
 backend/app/tools.py
@@ -12,4 +15,5 @@ backend/ledgerline_finance_agent.egg-info/SOURCES.txt
 backend/ledgerline_finance_agent.egg-info/dependency_links.txt
 backend/ledgerline_finance_agent.egg-info/requires.txt
 backend/ledgerline_finance_agent.egg-info/top_level.txt
+tests/test_api.py
 tests/test_finance_tools.py

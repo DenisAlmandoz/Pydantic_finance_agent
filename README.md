@@ -7,17 +7,19 @@ A finance analytics demo with one PydanticAI agent, two typed finance tools, a F
 Prerequisites: Python 3.11+, `uv`, and Node.js 20+.
 
 ```sh
+cp .env.example .env        # then add GROQ_API_KEY (or leave FINANCE_MODEL empty for demo mode)
 uv sync --group dev
-cd frontend && npm install && npm run dev
+cd frontend && npm install && npm run build && cd ..
+uv run uvicorn app.main:app --reload --app-dir backend --env-file .env
 ```
 
-In another terminal:
+For frontend hot reload, run the Vite dev server in another terminal instead of the pre-built copy:
 
 ```sh
-uv run uvicorn app.main:app --reload --app-dir backend
+cd frontend && npm run dev
 ```
 
-Open `http://localhost:5173`. Without `OPENAI_API_KEY`, chat runs in deterministic demo mode. Add `OPENAI_API_KEY` to the environment to enable the PydanticAI model-backed loop. Add `OPIK_API_KEY` and `OPIK_WORKSPACE` to enable remote tracing. Do not commit secrets.
+Open `http://localhost:5173` (Vite dev) or `http://localhost:8000` (built copy served by FastAPI). The model is chosen by `FINANCE_MODEL` using pydantic-ai syntax (e.g. `groq:openai/gpt-oss-120b`, `openai:gpt-4o-mini`). If `FINANCE_MODEL` is unset, or no provider key is present, chat runs in deterministic demo mode. Add `OPIK_API_KEY` and `OPIK_WORKSPACE` to enable remote tracing. Do not commit `.env` or secrets.
 
 ## Demo access
 

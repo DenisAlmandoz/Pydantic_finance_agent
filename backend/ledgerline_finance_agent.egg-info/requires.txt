@@ -1,4 +1,5 @@
 fastapi<1.0,>=0.115
+logfire[httpx]<6.0,>=2.0
 opik<2.0,>=1.8
 pydantic-ai<2.0,>=1.0
 uvicorn[standard]<1.0,>=0.30

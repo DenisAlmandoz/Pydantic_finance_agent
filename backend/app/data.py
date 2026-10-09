@@ -11,6 +11,15 @@ def read_financial_data() -> list[dict[str, str]]:
         return list(csv.DictReader(file))
 
 
+def dataset_context() -> str:
+    """Compact, labeled snapshot of the synthetic dataset for agent prompts."""
+    rows = read_financial_data()
+    lines = ["month,revenue,expenses,net_income"]
+    for row in rows:
+        lines.append(f"{row['month']},{row['revenue']},{row['expenses']},{row['net_income']}")
+    return "\n".join(lines)
+
+
 def dashboard_data() -> DashboardResponse:
     rows = read_financial_data()
     monthly = [

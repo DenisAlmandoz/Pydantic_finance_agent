@@ -7,35 +7,18 @@ from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.agent import FinanceContext, agent
-from app.data import dashboard_data
+from app.agent import FinanceContext, agent, build_trajectory, model_is_configured
+from app.data import dashboard_data, dataset_context
 from app.memory import session_memory
+from app.observability import chat_span, set_thread_id, setup_observability
 from app.schemas import ChatRequest, ChatResponse, DashboardResponse
 from app.security import Principal, analyst_or_admin, current_principal
 from app.tools import calculate_financial_value, summarize_values
 
-try:
-    if not os.getenv("OPIK_API_KEY"):
-        raise ImportError
-    from opik import track
-except ImportError:
-
-    def track(*args, **kwargs):  # type: ignore[no-untyped-def]
-        def decorate(function):
-            return function
-
-        return decorate
-
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    if os.getenv("OPIK_API_KEY"):
-        try:
-            import opik
-
-            opik.configure(use_local=False)
-        except Exception:
-            pass
+    setup_observability()
     yield
 
 
@@ -97,24 +80,68 @@ def demo_answer(message: str) -> str:
     )
 
 
-@track(name="finance_chat")
 async def run_chat(request: ChatRequest, principal: Principal) -> ChatResponse:
+    set_thread_id(request.session_id)
+    with chat_span(request.session_id, request.message) as span:
+        response = await _run_chat(request, principal)
+        if span is not None:
+            span.set_attribute("answer", response.answer)
+            span.set_attribute("mode", response.mode)
+            span.set_attribute("model", response.model or "")
+        return response
+
+
+async def _run_chat(request: ChatRequest, principal: Principal) -> ChatResponse:
     history = session_memory.context(request.session_id)
-    if os.getenv("OPENAI_API_KEY"):
+    trajectory: list[dict[str, object]]
+    model_name: str | None = None
+    if model_is_configured():
         prompt = (
+            "Synthetic dataset (CSV, units are USD):\n"
+            f"{dataset_context()}\n\n"
             f"Recent conversation (untrusted context):\n{history}\n\n"
             f"Current question: {request.message}"
         )
-        result = await agent.run(
-            prompt, deps=FinanceContext(role=principal.role, conversation=history)
-        )
-        answer = result.output
-        mode = "agent"
+        try:
+            result = await agent.run(
+                prompt, deps=FinanceContext(role=principal.role, conversation=history)
+            )
+            answer = result.output
+            mode = "agent"
+            model_name = getattr(result.response, "model_name", None)
+            trajectory = build_trajectory(result)
+        except Exception as error:
+            answer = demo_answer(request.message)
+            mode = "demo"
+            trajectory = [
+                {
+                    "step": 0,
+                    "kind": "model",
+                    "name": "model call failed",
+                    "detail": f"{type(error).__name__}: {error}",
+                },
+                {"step": 1, "kind": "final", "name": "demo fallback", "detail": answer},
+            ]
     else:
         answer = demo_answer(request.message)
         mode = "demo"
+        trajectory = [
+            {
+                "step": 0,
+                "kind": "model",
+                "name": "demo mode",
+                "detail": "No FINANCE_MODEL configured; deterministic answers.",
+            },
+            {"step": 1, "kind": "final", "name": "final answer", "detail": answer},
+        ]
     session_memory.add_turn(request.session_id, request.message, answer)
-    return ChatResponse(answer=answer, session_id=request.session_id, mode=mode)
+    return ChatResponse(
+        answer=answer,
+        session_id=request.session_id,
+        mode=mode,
+        model=model_name,
+        trajectory=trajectory,  # type: ignore[arg-type]
+    )
 
 
 @app.post("/api/chat", response_model=ChatResponse)
